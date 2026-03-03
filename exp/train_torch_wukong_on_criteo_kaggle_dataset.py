@@ -19,7 +19,7 @@ from data.pytorch.criteo_kaggle_dataset import CriteoDataset
 ####################################################################################################
 is_distributed = "WORLD_SIZE" in os.environ
 if is_distributed:
-    dist.init_process_group(backend="mccl")
+    dist.init_process_group(backend="nccl")
     local_rank = int(os.environ["LOCAL_RANK"])
     rank = int(os.environ["RANK"])
     world_size = int(os.environ["WORLD_SIZE"])
@@ -246,10 +246,15 @@ def validate(model, dataloader):
             outputs = model(sparse_inputs, dense_inputs)
             predictions = outputs.squeeze() >= 0
 
-            num_samples += labels.size(0)
-            pos_samples += (labels == 1).sum()
-            pos_correct += ((predictions == 1) & (labels == 1)).sum()
-            num_correct += (predictions == labels).sum()
+            # NOTE: 数据集的 label 是 uint8（0/1）。这里显式转换 dtype，
+            # 避免 predictions(bool) 与 labels(uint8) 的隐式比较带来困惑，
+            # 也避免在不同后端/AMP 设置下出现脆弱行为。
+            labels_bool = labels.to(torch.bool)
+
+            num_samples += labels_bool.size(0)
+            pos_samples += labels_bool.sum()
+            pos_correct += (predictions & labels_bool).sum()
+            num_correct += (predictions == labels_bool).sum()
 
     if is_distributed:
         dist.all_reduce(num_samples, op=dist.ReduceOp.SUM)

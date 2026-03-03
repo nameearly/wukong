@@ -22,3 +22,9 @@ class MLP(tf.keras.Sequential):
         layers.append(tf.keras.layers.Dense(units=dim_out, use_bias=bias))
 
         super().__init__(layers)
+
+    def call(self, inputs, training=None):
+        # NOTE: Wukong 的 MLP 模块依赖批归一化/随机失活（见论文 Sec. 3 的设计）。
+        # 这里显式透传 `training`，确保在 tf.function / 嵌套调用场景下
+        # 批归一化统计与随机失活行为正确。
+        return super().call(inputs, training=training)

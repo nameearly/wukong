@@ -237,11 +237,10 @@ class Wukong(Model):
             bias,
         )
 
-        # 将层添加到模型中，确保它们被正确跟踪
-        self._layers = (
-            [self.embedding] + self.interaction_layers + [self.projection_head]
-        )
-        # for exporting to ONNX
+        # NOTE: 不要手动覆盖 Keras 的私有内部字段（例如 `self._layers`）。
+        # Keras 会自动追踪挂到属性上的子层；覆盖私有字段可能破坏变量追踪、
+        # 保存/加载以及导出等行为。
+        # 用于导出到 ONNX
         self.output_names = ["output"]
 
     def call(self, inputs) -> tf.Tensor:

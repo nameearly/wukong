@@ -1,12 +1,16 @@
 import torch
 
 from model.pytorch.wukong import Wukong
+from exp.criteo_kaggle_constants import (
+    NUM_CAT_FEATURES,
+    NUM_DENSE_FEATURES,
+    NUM_SPARSE_EMBS,
+)
 
 BATCH_SIZE = 1
-NUM_CAT_FEATURES = 26
-NUM_DENSE_FEATURES = 13
-# Criteo dataset specific, from dataset.npz
-NUM_SPARSE_EMBS = [10] * NUM_CAT_FEATURES
+# NOTE: 需要与训练时使用的、数据集特定的词表大小保持一致。
+# 否则导出模型的嵌入表形状会与训练时保存的权重不一致（形状不匹配），
+# 导出的 ONNX 也就无法代表真实训练得到的模型。
 DIM_EMB = 128
 assert NUM_CAT_FEATURES == len(NUM_SPARSE_EMBS)
 

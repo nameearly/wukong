@@ -4,12 +4,16 @@ import tf2onnx
 import onnx
 
 from model.tensorflow.wukong import Wukong
+from exp.criteo_kaggle_constants import (
+    NUM_CAT_FEATURES,
+    NUM_DENSE_FEATURES,
+    NUM_SPARSE_EMBS,
+)
 
 BATCH_SIZE = 2
-NUM_CAT_FEATURES = 26
-NUM_DENSE_FEATURES = 13
-# Criteo dataset specific, from dataset.npz
-NUM_SPARSE_EMBS = [10] * NUM_CAT_FEATURES
+# NOTE: 需要与训练时使用的、数据集特定的词表大小保持一致。
+# 否则导出模型的嵌入表形状会与训练时保存的权重悄悄产生偏差，
+# 导致权重无法加载或导出的模型没有实际意义。
 DIM_EMB = 128
 assert NUM_CAT_FEATURES == len(NUM_SPARSE_EMBS)
 
@@ -46,8 +50,8 @@ outputs = model((sparse_inputs, dense_inputs))
 print("Model output shape:", outputs.shape)
 input_signature = [
     tf.TensorSpec(
-        shape=sparse_inputs.shape, dtype=tf.float32, name="sparse_inputs"
-    ),  # sparse_inputs
+        shape=sparse_inputs.shape, dtype=tf.int32, name="sparse_inputs"
+    ),  # sparse_inputs: must be integer dtype for embedding lookup
     tf.TensorSpec(
         shape=dense_inputs.shape, dtype=tf.float32, name="dense_inputs"
     ),  # dense_inputs
